@@ -10,9 +10,6 @@ namespace Util {
         /// </summary>
         /// <param name="value">可空值</param>
         public static T SafeValue<T>( this T? value ) where T : struct {
-            //测试
-            if (value == null)
-                return default(T);
             return value ?? default( T );
         }
 
