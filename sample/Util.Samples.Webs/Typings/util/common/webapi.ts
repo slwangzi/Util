@@ -8,6 +8,8 @@ import { Dialog } from './dialog';
 import { Result, FailResult, StateCode } from '../core/result';
 import { HttpHelper, HttpRequest, HttpContentType, HttpMethod } from '../angular/http-helper';
 import { Message } from './message';
+import { IocHelper as ioc } from '../angular/ioc-helper';
+import { Session } from "../security/session";
 
 /**
  * WebApi操作,与服务端返回的标准result对象交互
@@ -215,6 +217,7 @@ export class WebApiRequest<T> {
      */
     private handleFail(options: WebApiHandleOptions<T>, result?: Result<T>, errorResponse?: HttpErrorResponse) {
         let failResult = new FailResult(result, errorResponse);
+        this.handleHttpException(options, failResult);
         if (options.failHandler) {
             options.failHandler(failResult);
             return;
@@ -222,17 +225,6 @@ export class WebApiRequest<T> {
         if (result) {
             this.handleBusinessException(result);
             return;
-        }
-        this.handleHttpException(options, failResult);
-    }
-
-    /**
-     * 处理业务异常
-     */
-    private handleBusinessException(result: Result<T>) {
-        if (result.code === StateCode.Fail) {
-            Message.error(result.message);
-            console.log(`业务异常:\n${result.message}`);
         }
     }
 
@@ -253,8 +245,20 @@ export class WebApiRequest<T> {
         if (!failResult.errorResponse)
             return "";
         let error = failResult.errorResponse;
+        if (!error)
+            return "";
         return `Http请求异常：\nUrl:${error.url}\n状态码:${error.status},${error.statusText}\n`
-            + `错误消息:${error.message}\n错误响应:\n ${error.error.text}\n`;
+            + `错误消息:${error.message}\n错误响应:\n ${error.error && error.error.text}\n`;
+    }
+
+    /**
+     * 处理业务异常
+     */
+    private handleBusinessException(result: Result<T>) {
+        if (result.code === StateCode.Fail) {
+            Message.error(result.message);
+            console.log(`业务异常:\n${result.message}`);
+        }
     }
 
     /**
